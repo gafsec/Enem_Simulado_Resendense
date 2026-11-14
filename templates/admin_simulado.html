@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Simulado {{ detalhe.nome|nome_oculto }} - Admin{% endblock %}
+
+{% block content %}
+<div class="container pagina">
+    <a href="{{ url_for('admin', ano=ano_filtro, uf=uf_filtro) }}" class="btn btn-outline-light btn-sm mb-3">Voltar ao painel</a>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+        <div>
+            <h2 class="mb-1">{{ detalhe.nome|nome_oculto }}</h2>
+            <p class="text-muted mb-0">
+                {{ detalhe.ano or "Simulado" }}
+                {% if detalhe.uf %} · {{ detalhe.uf }}{% endif %}
+                {% if detalhe.municipio %} · {{ detalhe.municipio }}{% endif %}
+                {% if detalhe.quando %} · {{ detalhe.quando.strftime("%d/%m/%Y") }}{% endif %}
+                · IP {{ detalhe.ip|ip_oculto }}
+            </p>
+        </div>
+        <div class="text-end">
+            <div class="display-6 mb-0">{{ detalhe.percentual|round(1) }}%</div>
+            <div class="text-muted">{{ detalhe.acertos }} acertos em {{ detalhe.total }} itens</div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        {% for sigla, nome in nomes_area.items() %}
+        <div class="col-6 col-md-3 mb-3">
+            <div class="card card-dark text-center p-3 h-100">
+                <span>{{ nome }}</span>
+                <h3>{{ detalhe.notas[sigla] if sigla in detalhe.notas else "-" }}</h3>
+                <small class="text-muted">TRI</small>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if detalhe.media_tri is not none %}
+    <p class="mb-4">Média das quatro áreas: <strong>{{ detalhe.media_tri }}</strong></p>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12 mb-4">
+            <section class="card card-dark questao-card p-3">
+                <h3 class="h5">Questões respondidas neste simulado</h3>
+                {% if respostas %}
+                    {% for r in respostas %}
+                    <details class="gabarito-item" {% if not r.correta %}open{% endif %}>
+                        <summary class="d-flex justify-content-between gap-2">
+                            <span>Questão {{ pag_respostas.inicio + loop.index }} · {{ r.question.area|rotulo }}</span>
+                            <span class="badge {{ 'bg-success' if r.correta else 'bg-danger' }}">
+                                {{ "Acertei" if r.correta else "Errei" }}
+                            </span>
+                        </summary>
+                        {% with question=r.question, resposta_usuario=r.resposta_dada %}
+                            {% include "_questao_desempenho.html" %}
+                        {% endwith %}
+                    </details>
+                    {% endfor %}
+                    {% set paginacao = pag_respostas %}
+                    {% set ancora = none %}
+                    {% set rotulo = "Questões" %}
+                    {% include "_paginacao.html" %}
+                {% else %}
+                    <p class="text-muted mb-0">Sem respostas registradas neste simulado.</p>
+                {% endif %}
+            </section>
+        </div>
+    </div>
+</div>
+{% endblock %}

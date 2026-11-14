@@ -1,0 +1,37 @@
+<section class="card card-dark p-3 mb-3" id="como-a-nota">
+    <h2 class="h6 mb-2">Como a nota é calculada</h2>
+    {% if modo == "admin" %}
+    <p class="small mb-2">
+        A <strong>porcentagem</strong> é o acerto objetivo:
+        acertos divididos pelo total de itens, vezes 100.
+        Cada questão vale o mesmo.
+    </p>
+    <p class="small mb-2">
+        A <strong>TRI por área</strong> (Natureza, Humanas, Linguagens e Matemática)
+        vem da nota oficial do INEP nos microdados daquela edição.
+        A <strong>TRI média</strong> é a média dessas quatro notas.
+        A lista do painel é o ranking por essa média.
+        Isso não é calculado pelo portal.
+    </p>
+    <p class="small mb-0">
+        No resultado do aluno, a escala 0 a 1000 é só uma estimativa de treino.
+        Não substitui a TRI oficial.
+    </p>
+    {% else %}
+    <p class="small mb-2">
+        A <strong>porcentagem</strong> é o acerto objetivo:
+        acertos divididos pelo total de questões, vezes 100.
+        Errar ou acertar uma questão fácil ou difícil conta igual.
+    </p>
+    <p class="small mb-2">
+        A <strong>estimativa de 0 a 1000</strong> é um cálculo de treino do portal.
+        Questões que pouca gente acerta pesam mais.
+        A conta começa no meio da escala (500) e sobe ou desce conforme o que você acertou.
+        Precisa de pelo menos 3 respostas. Não é a TRI oficial do INEP.
+    </p>
+    <p class="small mb-0">
+        Na redação, o analisador lê o texto pelas cinco competências e sugere uma nota de 0 a 1000.
+        Você ainda pode dar a sua nota. Também é treino, não a correção oficial.
+    </p>
+    {% endif %}
+</section>

@@ -1,0 +1,7 @@
+{% if texto.startswith('http') %}
+<img src="{{ texto }}" class="img-fluid d-block figura-questao" alt="Alternativa {{ letra }}">
+{% elif texto.startswith('img/') %}
+<img src="{{ url_for('static', filename=texto) }}" class="img-fluid d-block figura-questao" alt="Alternativa {{ letra }}">
+{% else %}
+{{ texto }}
+{% endif %}

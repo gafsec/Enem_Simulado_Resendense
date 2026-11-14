@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}{{ titulo }} - Admin{% endblock %}
+
+{% block content %}
+<div class="container pagina">
+    <a href="{{ url_for('admin', ano=ano_filtro, uf=uf_filtro) }}" class="btn btn-outline-light btn-sm mb-3">Voltar ao painel</a>
+    <h1 class="h4 mb-2">{{ titulo }}</h1>
+    <p class="small text-muted mb-3">{{ explicacao }}</p>
+    <p class="analise-total mb-4">{{ valor }}</p>
+
+    <div class="card card-dark p-3 mb-3">
+        <h2 class="h6 mb-2">O que entra nesta conta</h2>
+        <div class="table-responsive">
+            <table class="table table-dark table-hover table-sm align-middle mb-0">
+                <thead>
+                    <tr>
+                        {% set pagina_param = "pagina" %}
+                        {% set ancora = none %}
+                        {% for rotulo_col, campo in colunas %}
+                            {% set rotulo = rotulo_col %}
+                            {% set inicio = "desc" if campo not in ["nome", "uf", "municipio", "tema", "quando", "comentario"] else "asc" %}
+                            {% include "_th_ordem.html" %}
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in linhas %}
+                    <tr{% if item.href %} class="indicador-linha" data-href="{{ item.href }}"{% endif %}>
+                        {% for _rotulo, campo in colunas %}
+                        <td>
+                            {% if loop.first and item.href %}
+                            <a href="{{ item.href }}">
+                            {% endif %}
+                            {% if campo == "nome" %}
+                                {{ item.nome|nome_oculto }}
+                            {% elif campo == "ip" %}
+                                <span class="ip-oculto">{{ item.ip|ip_oculto }}</span>
+                            {% elif campo == "percentual" %}
+                                {{ item.percentual if item.percentual is not none else "-" }}{% if item.percentual is not none %}%{% endif %}
+                            {% elif campo == "tri" %}
+                                {{ item.media_tri if item.media_tri is not none else "-" }}
+                            {% elif campo == "acertos" %}
+                                {{ item.acertos }}{% if item.total %}/{{ item.total }}{% endif %}
+                            {% elif campo == "nota" %}
+                                {{ item.nota if item.nota is not none else "-" }}
+                            {% elif campo == "quantidade" %}
+                                {{ item.quantidade }}
+                            {% elif campo == "simulados" %}
+                                {{ item.simulados }}
+                            {% elif campo == "feedbacks" %}
+                                {{ item.feedbacks }}
+                            {% elif campo == "media" %}
+                                {{ item.media }}%
+                            {% elif campo == "alunos" %}
+                                {{ item.alunos }}
+                            {% elif campo == "quando" %}
+                                {{ item.quando }}
+                            {% elif campo == "tema" %}
+                                {{ item.tema }}
+                            {% elif campo == "uf" %}
+                                {{ item.uf or "-" }}
+                            {% elif campo == "municipio" %}
+                                {{ item.municipio or "-" }}
+                            {% elif campo == "comentario" %}
+                                {{ item.comentario }}
+                            {% else %}
+                                {{ item[campo] }}
+                            {% endif %}
+                            {% if loop.first and item.href %}
+                            </a>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="{{ colunas|length }}" class="text-muted">Nenhum dado neste indicador.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% set ancora = none %}
+        {% set rotulo = titulo %}
+        {% include "_paginacao.html" %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.querySelectorAll(".indicador-linha").forEach(function (linha) {
+        linha.addEventListener("click", function (evento) {
+            if (evento.target.closest("a")) return;
+            window.location.href = linha.dataset.href;
+        });
+    });
+</script>
+{% endblock %}

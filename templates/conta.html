@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Meu cadastro - Projeto social Resendense - Enem{% endblock %}
+
+{% block content %}
+<div class="container pagina">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <section class="card card-dark">
+                <div class="card-body p-4">
+                    <h1 class="h4 mb-3">Meu cadastro</h1>
+                    <form method="post" action="{{ url_for('conta') }}">
+                        <div class="mb-3">
+                            <label for="nome" class="form-label">Nome</label>
+                            <input type="text" class="form-control" id="nome" name="nome" required maxlength="120" autocomplete="name" value="{{ user.nome }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">E-mail</label>
+                            <input type="email" class="form-control" id="email" value="{{ user.email or '' }}" readonly disabled>
+                            <p class="small text-muted mb-0">O e-mail não muda.</p>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-4">
+                                <label for="uf" class="form-label">UF</label>
+                                <select id="uf" name="uf" class="form-select" required>
+                                    {% for sigla, nome_uf in ufs %}
+                                    <option value="{{ sigla }}" {% if sigla == (user.uf or 'RJ') %}selected{% endif %}>{{ sigla }} - {{ nome_uf }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-8">
+                                <label for="municipio" class="form-label">Município</label>
+                                <input type="text" class="form-control" id="municipio" name="municipio" required maxlength="120" autocomplete="address-level2" value="{{ user.municipio or 'Resende' }}">
+                            </div>
+                        </div>
+                        <details class="filtro-extra mb-3">
+                            <summary>Trocar senha</summary>
+                            <div class="pt-3">
+                                <div class="mb-3">
+                                    <label for="senha_atual" class="form-label">Senha atual</label>
+                                    <input type="password" class="form-control" id="senha_atual" name="senha_atual" autocomplete="current-password">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="senha" class="form-label">Nova senha</label>
+                                    <input type="password" class="form-control" id="senha" name="senha" minlength="6" autocomplete="new-password">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="confirmar" class="form-label">Confirmar nova senha</label>
+                                    <input type="password" class="form-control" id="confirmar" name="confirmar" minlength="6" autocomplete="new-password">
+                                </div>
+                            </div>
+                        </details>
+                        <button type="submit" class="btn btn-primary w-100">Salvar</button>
+                    </form>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+{% endblock %}

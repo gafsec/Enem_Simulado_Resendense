@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Cadastro - Projeto social Resendense - Enem{% endblock %}
+
+{% block content %}
+<div class="container pagina">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <section class="card card-dark">
+                <div class="card-body p-4">
+                    <h1 class="h3 mb-3">Criar conta</h1>
+                    <p class="text-muted">Nome, e-mail, região e senha.</p>
+                    <form method="post" action="{{ url_for('cadastro') }}">
+                        <div class="mb-3">
+                            <label for="nome" class="form-label">Nome</label>
+                            <input type="text" class="form-control" id="nome" name="nome" required maxlength="120" autocomplete="name">
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">E-mail</label>
+                            <input type="email" class="form-control" id="email" name="email" required autocomplete="username">
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-4">
+                                <label for="uf" class="form-label">UF</label>
+                                <select id="uf" name="uf" class="form-select" required>
+                                    {% for sigla, nome_uf in ufs %}
+                                    <option value="{{ sigla }}" {% if sigla == uf_sel %}selected{% endif %}>{{ sigla }} - {{ nome_uf }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-8">
+                                <label for="municipio" class="form-label">Município</label>
+                                <input type="text" class="form-control" id="municipio" name="municipio" required maxlength="120" autocomplete="address-level2" value="{{ municipio_sel }}">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="senha" class="form-label">Senha</label>
+                            <input type="password" class="form-control" id="senha" name="senha" required minlength="6" autocomplete="new-password">
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirmar" class="form-label">Confirmar senha</label>
+                            <input type="password" class="form-control" id="confirmar" name="confirmar" required minlength="6" autocomplete="new-password">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Cadastrar</button>
+                    </form>
+                    <p class="mt-3 mb-0">
+                        Já tem conta?
+                        <a href="{{ url_for('login') }}">Entrar</a>
+                    </p>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+{% endblock %}

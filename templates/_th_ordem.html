@@ -1,0 +1,6 @@
+<th>
+    <a class="th-ordem{% if ordem and ordem.campo == campo %} is-{{ ordem.dir }}{% endif %}"
+       href="{{ link_ordem(campo, ordem.param, ordem.param_dir, pagina_param if pagina_param is defined else none, ancora if ancora is defined else none, inicio if inicio is defined else 'asc') }}">
+        {{ rotulo }}{% if ordem and ordem.campo == campo %}<span aria-hidden="true">{{ " ↓" if ordem.dir == "desc" else " ↑" }}</span>{% endif %}
+    </a>
+</th>

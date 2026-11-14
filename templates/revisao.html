@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Revisar questão - Projeto social Resendense - Enem{% endblock %}
+
+{% block content %}
+<div class="container pagina">
+    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-light btn-sm mb-3">Voltar ao estudo</a>
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card card-dark questao-card p-4">
+                <div class="d-flex justify-content-between gap-2 mb-2">
+                    <h1 class="h5 mb-0">{{ question.area|rotulo }}{% if question.ano %} · {{ question.ano }}{% endif %}</h1>
+                    <span class="badge {{ 'bg-success' if ultima.correta else 'bg-danger' }}">
+                        {{ "Acertou na última" if ultima.correta else "Errou na última" }}
+                    </span>
+                </div>
+                <p class="text-muted">{{ erros }} erro{{ 's' if erros != 1 else '' }} em {{ tentativas }} tentativa{{ 's' if tentativas != 1 else '' }}.</p>
+                {% set questao = question %}
+                {% include "_figura_questao.html" %}
+                {% if not question.imagem or not question.imagem.startswith('img/questoes/') %}
+                <p class="questao-texto enunciado-questao">{{ question.enunciado|limpar }}</p>
+                {% endif %}
+                {% include "_origem_questao.html" %}
+                {% for letra, texto in [
+                    ('A', question.alternativa_a),
+                    ('B', question.alternativa_b),
+                    ('C', question.alternativa_c),
+                    ('D', question.alternativa_d),
+                    ('E', question.alternativa_e)
+                ] %}
+                    {% set texto = texto|limpar %}
+                    {% if texto %}
+                    <div class="alternativa-opcao {% if letra == question.resposta_correta %}correta{% elif letra == ultima.resposta_marcada %}errada{% endif %}">
+                        <span class="alternativa-letra">{{ letra }}</span>
+                        <span class="questao-texto">{% include "_texto_alternativa.html" %}</span>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+                <p class="mt-3 mb-1"><strong>Você marcou:</strong> {{ ultima.resposta_marcada }}</p>
+                <p><strong>Correta:</strong> {{ question.resposta_correta }}</p>
+                {% if question.explicacao %}
+                <p class="questao-texto"><strong>Explicação:</strong> {{ question.explicacao|limpar }}</p>
+                {% endif %}
+                {% include "_link_gabarito.html" %}
+                <form method="post" action="{{ url_for('start_simulation') }}" class="mt-3">
+                    <input type="hidden" name="modo" value="por_tema">
+                    <input type="hidden" name="tema" value="{{ question.area }}">
+                    <input type="hidden" name="qtd" value="10">
+                    <input type="hidden" name="correcao" value="imediata">
+                    <button class="btn btn-primary" type="submit">Treinar mais desta área</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

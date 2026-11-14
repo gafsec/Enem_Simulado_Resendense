@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+{% block title %}Questão {{ index }} de {{ total }}{% endblock %}
+
+{% block content %}
+<div class="container pagina">
+<div class="row justify-content-center">
+  <div class="col-lg-9 col-xl-8">
+    <div class="card card-dark questao-card p-3">
+      <div class="d-flex justify-content-between align-items-center gap-3 mb-2">
+        <span class="text-muted">Questão {{ index }} de {{ total }}</span>
+        <span class="d-flex align-items-center gap-2">
+          {% if prazo %}
+          <span id="cronometro" class="cronometro" data-prazo="{{ prazo }}">--:--</span>
+          {% endif %}
+          {% if question.ano %}
+          <span class="badge bg-info text-dark">{{ question.ano }}</span>
+          {% endif %}
+        </span>
+      </div>
+      <div class="progress mb-3" role="progressbar" aria-valuenow="{{ index }}" aria-valuemin="1" aria-valuemax="{{ total }}" aria-label="Progresso do simulado">
+        <div class="progress-bar" style="width: {{ (index / total * 100)|round(0) }}%"></div>
+      </div>
+
+      <h1 class="h6 mb-2">{{ question.area|rotulo }}</h1>
+
+      {% set questao = question %}
+      {% include "_figura_questao.html" %}
+
+      {% if not question.imagem or not question.imagem.startswith('img/questoes/') %}
+      <p class="questao-texto enunciado-questao">{{ question.enunciado|limpar }}</p>
+      {% endif %}
+      {% include "_origem_questao.html" %}
+
+      <form method="post" class="mt-3" id="form-questao" data-manter-scroll="{{ manter_scroll if manter_scroll is not none else '' }}" data-revelar="{{ url_for('quiz_revelar') }}" data-imediata="{{ '1' if correcao_imediata else '' }}" data-correta="{{ question.resposta_correta }}">
+        <input type="hidden" name="voltar" value="index">
+        <input type="hidden" name="posicao" id="posicao-tela" value="0">
+        {% if session.get('simulation_id') %}
+        <input type="hidden" name="sim_id" value="{{ session.get('simulation_id') }}">
+        {% endif %}
+        {% for letra, texto in [
+          ('A', question.alternativa_a),
+          ('B', question.alternativa_b),
+          ('C', question.alternativa_c),
+          ('D', question.alternativa_d),
+          ('E', question.alternativa_e)
+        ] %}
+          {% set texto = texto|limpar %}
+          {% if texto %}
+          {% set revelada = correcao_imediata and resposta_revelada %}
+          {% set eh_correta = revelada and letra == question.resposta_correta %}
+          {% set eh_errada = revelada and letra == resposta_revelada and letra != question.resposta_correta %}
+          <label class="alternativa-opcao {% if eh_correta %}correta{% elif eh_errada %}errada{% endif %}">
+            <input class="alternativa-input" type="radio" name="resposta" value="{{ letra }}"
+                   {% if resposta_atual == letra %}checked{% endif %}
+                   {% if revelada %}disabled{% endif %}>
+            <span class="alternativa-letra">{{ letra }}</span>
+            <span class="questao-texto">
+              {% include "_texto_alternativa.html" %}
+            </span>
+          </label>
+          {% endif %}
+        {% endfor %}
+
+        <div class="qnav-lista mt-3 mb-2" aria-label="Questões do simulado">
+          {% for item in navegacao %}
+          <button type="submit" name="ir" value="{{ item.numero }}"
+                  data-qid="{{ item.qid }}"
+                  class="qnav {% if item.atual %}atual{% endif %} {% if correcao_imediata and item.certa %}certa{% elif correcao_imediata and item.errada %}errada{% elif item.respondida %}respondida{% endif %} {% if item.marcada %}revisar{% endif %}"
+                  title="Questão {{ item.numero }}{% if correcao_imediata and item.certa %}, resposta certa{% elif correcao_imediata and item.errada %}, resposta incorreta{% endif %}{% if item.marcada %}, marcada para rever{% endif %}">
+            {{ item.numero }}
+          </button>
+          {% endfor %}
+        </div>
+
+        <div id="feedback-resposta">
+          {% if correcao_imediata and resposta_revelada %}
+          {% if resposta_revelada == question.resposta_correta %}
+          <div class="alert alert-success mb-0" role="status">Resposta certa.</div>
+          {% else %}
+          <div class="alert alert-danger mb-0" role="status">
+            Resposta incorreta. A alternativa correta é <strong>{{ question.resposta_correta }}</strong>.
+          </div>
+          {% endif %}
+          {% if question.explicacao %}
+          <p class="questao-texto mb-0"><strong>Explicação:</strong> {{ question.explicacao }}</p>
+          {% endif %}
+          <div class="feedback-gabarito">
+            {% include "_link_gabarito.html" %}
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
+          <div class="d-flex flex-wrap gap-2">
+            {% if formato != "prova" %}
+            <a href="{{ url_for('index') }}" class="btn btn-outline-light btn-sm"
+               onclick="return confirm('Pausar o simulado? As marcações para rever continuam quando você voltar.');">
+              Pausar
+            </a>
+            {% endif %}
+            <button type="button" name="acao" value="marcar" class="btn btn-outline-warning btn-sm" id="botao-marcar" data-marcar="{{ url_for('quiz_marcar') }}">
+              {{ "Desmarcar revisão" if questao_marcada else "Marcar para rever" }}
+            </button>
+            <button type="submit" class="btn btn-outline-danger btn-sm"
+                    formaction="{{ url_for('cancelar_simulado') }}"
+                    formmethod="post"
+                    onclick="return confirm('Cancelar este simulado? Ele sai da sua lista.');">
+              Cancelar
+            </button>
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            {% if index > 1 %}
+            <button type="submit" name="acao" value="anterior" class="btn btn-outline-light">Anterior</button>
+            {% endif %}
+            {% if correcao_imediata and not resposta_revelada and (resposta_atual or not questao_marcada) %}
+            <button type="submit" name="acao" value="responder" class="btn btn-primary" id="botao-principal" data-proximo-texto="{{ 'Ver resultado' if index == total else 'Próxima questão' }}" data-proximo-acao="{{ 'resultado' if index == total else 'proxima' }}">Mostrar resposta</button>
+            {% elif index == total %}
+            <button type="submit" name="acao" value="resultado" class="btn btn-primary" id="botao-principal" data-proximo-texto="Ver resultado" data-proximo-acao="resultado">Ver resultado</button>
+            {% else %}
+            <button type="submit" name="acao" value="proxima" class="btn btn-primary" id="botao-principal" data-proximo-texto="Próxima questão" data-proximo-acao="proxima">Próxima questão</button>
+            {% endif %}
+          </div>
+        </div>
+        <p class="text-muted small mt-2 mb-0" id="aviso-marcadas" {% if not total_marcadas %}hidden{% endif %}>
+          <span id="texto-marcadas">{{ total_marcadas }} {{ 'questão' if total_marcadas == 1 else 'questões' }} marcada{{ 's' if total_marcadas != 1 else '' }} para rever.</span> O círculo laranja indica as marcadas. Dá para marcar quantas quiser. Sem resposta, o simulado só termina quando as pendentes tiverem alternativa.
+        </p>
+      </form>
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if prazo %}
+<script>
+    const cronometro = document.getElementById("cronometro");
+    const formulario = document.querySelector("form");
+    const prazo = new Date(cronometro.dataset.prazo);
+    let encerrado = false;
+
+    function atualizarCronometro() {
+        const restante = Math.max(0, Math.floor((prazo.getTime() - Date.now()) / 1000));
+        const horas = Math.floor(restante / 3600);
+        const minutos = Math.floor((restante % 3600) / 60);
+        const segundos = restante % 60;
+        const texto = horas > 0
+            ? String(horas) + ":" + String(minutos).padStart(2, "0") + ":" + String(segundos).padStart(2, "0")
+            : String(minutos).padStart(2, "0") + ":" + String(segundos).padStart(2, "0");
+        cronometro.textContent = texto;
+        cronometro.classList.toggle("urgente", restante < 60);
+        if (restante === 0 && !encerrado) {
+            encerrado = true;
+            const campo = document.createElement("input");
+            campo.type = "hidden";
+            campo.name = "acao";
+            campo.value = "tempo";
+            formulario.appendChild(campo);
+            formulario.submit();
+        }
+    }
+
+    atualizarCronometro();
+    setInterval(atualizarCronometro, 1000);
+</script>
+{% endif %}
+<script>
+    (function () {
+        const formulario = document.getElementById("form-questao") || document.querySelector("form");
+        const campoPosicao = document.getElementById("posicao-tela");
+        const aviso = document.getElementById("feedback-resposta");
+        const botaoPrincipal = document.getElementById("botao-principal");
+        const bruto = formulario ? formulario.getAttribute("data-manter-scroll") : "";
+        const manter = bruto === "" ? null : Number(bruto);
+        if (history.scrollRestoration) {
+            history.scrollRestoration = "manual";
+        }
+        function gravarPosicao() {
+            if (campoPosicao) {
+                campoPosicao.value = String(Math.round(window.scrollY || 0));
+            }
+        }
+        function restaurar() {
+            if (manter === null || isNaN(manter)) {
+                return;
+            }
+            window.scrollTo(0, manter);
+        }
+        function escapar(texto) {
+            return String(texto || "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+        }
+        function travarRolagem(y) {
+            const ir = function () {
+                window.scrollTo(0, y);
+            };
+            ir();
+            requestAnimationFrame(function () {
+                ir();
+                requestAnimationFrame(ir);
+            });
+        }
+        function pintarResposta(dados) {
+            document.querySelectorAll(".alternativa-opcao").forEach(function (opcao) {
+                const campo = opcao.querySelector('input[name="resposta"]');
+                if (!campo) {
+                    return;
+                }
+                campo.disabled = true;
+                opcao.classList.remove("correta", "errada");
+                if (campo.value === dados.correta) {
+                    opcao.classList.add("correta");
+                } else if (campo.value === dados.marcada && !dados.certa) {
+                    opcao.classList.add("errada");
+                }
+            });
+            const atual = document.querySelector(".qnav.atual");
+            if (atual) {
+                atual.classList.remove("respondida");
+                atual.classList.toggle("certa", dados.certa);
+                atual.classList.toggle("errada", !dados.certa);
+            }
+            if (aviso) {
+                let html = dados.certa
+                    ? '<div class="alert alert-success mb-0" role="status">Resposta certa.</div>'
+                    : '<div class="alert alert-danger mb-0" role="status">Resposta incorreta. A alternativa correta é <strong>'
+                        + escapar(dados.correta)
+                        + "</strong>.</div>";
+                if (dados.explicacao) {
+                    html += '<p class="questao-texto mb-0"><strong>Explicação:</strong> '
+                        + escapar(dados.explicacao)
+                        + "</p>";
+                }
+                if (dados.gabarito_url) {
+                    html += '<div class="feedback-gabarito"><a class="btn btn-outline-light btn-sm" href="'
+                        + escapar(dados.gabarito_url)
+                        + '" target="_blank" rel="noopener">'
+                        + escapar(dados.gabarito_rotulo || "Ver no gabarito oficial")
+                        + "</a></div>";
+                }
+                aviso.innerHTML = html;
+            }
+            if (botaoPrincipal) {
+                if (dados.index >= dados.total) {
+                    botaoPrincipal.name = "acao";
+                    botaoPrincipal.value = "resultado";
+                    botaoPrincipal.textContent = "Ver resultado";
+                } else {
+                    botaoPrincipal.name = "acao";
+                    botaoPrincipal.value = "proxima";
+                    botaoPrincipal.textContent = "Próxima questão";
+                }
+                botaoPrincipal.blur();
+            }
+        }
+        function revelarSemRecarregar(evento) {
+            if (!formulario || formulario.getAttribute("data-imediata") !== "1") {
+                return;
+            }
+            if (!botaoPrincipal || botaoPrincipal.value !== "responder") {
+                return;
+            }
+            const marcada = formulario.querySelector('input[name="resposta"]:checked');
+            if (!marcada) {
+                return;
+            }
+            evento.preventDefault();
+            evento.stopPropagation();
+            if (evento.stopImmediatePropagation) {
+                evento.stopImmediatePropagation();
+            }
+            const y = window.scrollY || 0;
+            if (document.activeElement && document.activeElement.blur) {
+                document.activeElement.blur();
+            }
+            fetch(formulario.getAttribute("data-revelar"), {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ resposta: marcada.value })
+            }).then(function (resposta) {
+                return resposta.json();
+            }).then(function (dados) {
+                if (!dados || !dados.ok) {
+                    gravarPosicao();
+                    formulario.submit();
+                    return;
+                }
+                pintarResposta(dados);
+                travarRolagem(y);
+            }).catch(function () {
+                gravarPosicao();
+                formulario.submit();
+            });
+        }
+        restaurar();
+        requestAnimationFrame(function () {
+            restaurar();
+            requestAnimationFrame(restaurar);
+        });
+        window.addEventListener("load", restaurar);
+        document.querySelectorAll(".figura-questao").forEach(function (figura) {
+            if (!figura.complete) {
+                figura.addEventListener("load", restaurar);
+            }
+        });
+        if (formulario) {
+            formulario.addEventListener("submit", function (evento) {
+                gravarPosicao();
+                if (formulario.getAttribute("data-imediata") === "1"
+                    && botaoPrincipal
+                    && botaoPrincipal.value === "responder"
+                    && evento.submitter === botaoPrincipal) {
+                    revelarSemRecarregar(evento);
+                }
+            }, true);
+            if (botaoPrincipal) {
+                botaoPrincipal.addEventListener("click", revelarSemRecarregar, true);
+            }
+        }
+        const botaoMarcar = document.getElementById("botao-marcar");
+        const avisoMarcadas = document.getElementById("aviso-marcadas");
+        const textoMarcadas = document.getElementById("texto-marcadas");
+        function textoContagem(total) {
+            if (total === 1) {
+                return "1 questão marcada para rever.";
+            }
+            return String(total) + " questões marcadas para rever.";
+        }
+        function aplicarMarca(dados) {
+            const marcadas = {};
+            (dados.numeros || []).forEach(function (numero) {
+                marcadas[String(numero)] = true;
+            });
+            document.querySelectorAll(".qnav").forEach(function (bola) {
+                bola.classList.toggle("revisar", !!marcadas[bola.textContent.trim()]);
+            });
+            if (botaoMarcar) {
+                botaoMarcar.textContent = dados.marcada ? "Desmarcar revisão" : "Marcar para rever";
+            }
+            if (avisoMarcadas) {
+                avisoMarcadas.hidden = dados.total < 1;
+            }
+            if (textoMarcadas) {
+                textoMarcadas.textContent = textoContagem(dados.total);
+            }
+            if (botaoPrincipal && formulario && formulario.getAttribute("data-imediata") === "1") {
+                const revelada = !!document.querySelector('input[name="resposta"][disabled]');
+                const escolhida = !!formulario.querySelector('input[name="resposta"]:checked');
+                if (!revelada && dados.marcada && !escolhida) {
+                    botaoPrincipal.name = "acao";
+                    botaoPrincipal.value = botaoPrincipal.getAttribute("data-proximo-acao") || "proxima";
+                    botaoPrincipal.textContent = botaoPrincipal.getAttribute("data-proximo-texto") || "Próxima questão";
+                }
+                if (!revelada && !dados.marcada && !escolhida) {
+                    botaoPrincipal.name = "acao";
+                    botaoPrincipal.value = "responder";
+                    botaoPrincipal.textContent = "Mostrar resposta";
+                }
+            }
+        }
+        if (botaoMarcar) {
+            botaoMarcar.addEventListener("click", function () {
+                fetch(botaoMarcar.getAttribute("data-marcar"), {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: "{}"
+                }).then(function (resposta) {
+                    return resposta.json();
+                }).then(function (dados) {
+                    if (!dados || !dados.ok) {
+                        return;
+                    }
+                    aplicarMarca(dados);
+                });
+            });
+        }
+    })();
+    document.querySelectorAll('input[name="resposta"]').forEach((campo) => {
+        campo.addEventListener("change", function () {
+            fetch("{{ url_for('quiz_rascunho') }}", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ resposta: campo.value })
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% if questao.imagem %}
+{% set arquivos = questao.imagem.split('|') %}
+<div class="mb-3 text-center">
+    {% for arquivo in arquivos %}
+    {% set arquivo = arquivo.strip() %}
+    {% if arquivo %}
+    {% if arquivo.startswith('http') %}
+    <img src="{{ arquivo }}" class="img-fluid rounded figura-questao mb-2" alt="Figura da questão">
+    {% else %}
+    <img src="{{ url_for('static', filename=arquivo) }}" class="img-fluid rounded figura-questao mb-2" alt="Figura da questão">
+    {% endif %}
+    {% endif %}
+    {% endfor %}
+</div>
+{% endif %}

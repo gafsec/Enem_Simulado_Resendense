@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ titulo or "Arquivo original" }}{% endblock %}
+
+{% block content %}
+<div class="container pagina">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            {% if referencia %}
+            <p class="text-muted small mb-2">{{ referencia }}</p>
+            {% endif %}
+            {% if pdf_url %}
+            <iframe class="pdf-original" src="{{ pdf_url }}" title="{{ titulo or "Arquivo original da questão" }}"></iframe>
+            {% elif fonte %}
+            <article class="card card-dark p-3 fonte-questao">
+                <h1 class="h5 mb-3">{{ fonte.titulo }}</h1>
+                {% for arquivo in fonte.imagens %}
+                <p class="text-center mb-3">
+                    <img src="{{ arquivo }}" class="img-fluid rounded figura-questao" alt="Figura da questão">
+                </p>
+                {% endfor %}
+                {% for paragrafo in fonte.paragrafos %}
+                <p class="questao-texto enunciado-questao">{{ paragrafo }}</p>
+                {% endfor %}
+                {% if fonte.comando %}
+                <p class="questao-texto enunciado-questao">{{ fonte.comando }}</p>
+                {% endif %}
+                {% if fonte.alternativas %}
+                <ul class="lista-fonte-alt">
+                    {% for alternativa in fonte.alternativas %}
+                    <li>
+                        <strong>{{ alternativa.letra }}</strong>
+                        {% if alternativa.arquivo %}
+                        <img src="{{ alternativa.arquivo }}" class="img-fluid rounded figura-questao d-block mt-2" alt="Alternativa {{ alternativa.letra }}">
+                        {% endif %}
+                        {% if alternativa.texto %}
+                        {{ alternativa.texto }}
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </article>
+            {% else %}
+            <p>Não foi possível abrir o arquivo desta questão.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

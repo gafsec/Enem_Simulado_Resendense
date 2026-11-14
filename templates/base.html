@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="pt-br" data-bs-theme="dark">
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}Projeto social Resendense - Enem{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script>
+        (function () {
+            try {
+                var tema = localStorage.getItem("enem-tema");
+                if (tema !== "light" && tema !== "dark") {
+                    tema = "dark";
+                }
+                document.documentElement.setAttribute("data-bs-theme", tema);
+            } catch (erro) {
+                document.documentElement.setAttribute("data-bs-theme", "dark");
+            }
+        })();
+    </script>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+        crossorigin="anonymous"
+    >
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" sizes="any">
+    <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='img/icone.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}">
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg barra-topo py-2 mb-2">
+    <div class="container">
+        <a href="{{ url_for('index') }}" class="navbar-brand" aria-label="Projeto social Resendense - Enem">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Projeto social Resendense - Enem" class="logo-marca">
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarNav" aria-controls="navbarNav"
+                aria-expanded="false" aria-label="Alternar navegação">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto align-items-lg-center">
+                {% if current_user %}
+                <li class="nav-item">
+                    <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint in ['dashboard', 'revisar_questao', 'resultado', 'dashboard_assunto'] %}active{% endif %}">Desempenho</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('redacao') }}" class="nav-link {% if request.endpoint == 'redacao' %}active{% endif %}">Redação</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('faq') }}" class="nav-link {% if request.endpoint == 'faq' %}active{% endif %}">FAQ</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('avaliacao') }}" class="nav-link {% if request.endpoint == 'avaliacao' %}active{% endif %}">Avaliação</a>
+                </li>
+                {% if eh_admin %}
+                <li class="nav-item">
+                    <a href="{{ url_for('admin') }}" class="nav-link {% if request.endpoint in ['admin', 'admin_simulado', 'admin_indicador'] %}active{% endif %}">Admin</a>
+                </li>
+                {% endif %}
+                <li class="nav-item">
+                    <a href="{{ url_for('conta') }}" class="nav-link {% if request.endpoint == 'conta' %}active{% endif %}">Cadastro</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('logout') }}" class="nav-link">Sair</a>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a href="{{ url_for('faq') }}" class="nav-link {% if request.endpoint == 'faq' %}active{% endif %}">FAQ</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('login') }}" class="nav-link">Entrar</a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('cadastro') }}" class="nav-link">Cadastrar</a>
+                </li>
+                {% endif %}
+                <li class="nav-item ms-lg-2">
+                    <button type="button" class="btn btn-sm btn-outline-light" id="btn-tema" aria-pressed="false" title="Tema claro">Tema claro</button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+            </div>
+        {% endfor %}
+    {% endwith %}
+</div>
+
+{% block content %}{% endblock %}
+
+<script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+    crossorigin="anonymous">
+</script>
+<script src="{{ url_for('static', filename='js/tema.js') }}"></script>
+
+{% block scripts %}{% endblock %}
+{% if request.args.get('print_y', '').isdigit() %}
+<style>body { position: relative; top: -{{ request.args.get('print_y')|int }}px; }</style>
+{% endif %}
+</body>
+</html>

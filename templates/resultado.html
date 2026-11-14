@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Resultado do simulado{% endblock %}
+
+{% block content %}
+<div class="container pagina">
+    <h1 class="h3 mb-3">Resultado do simulado</h1>
+
+    <div class="card card-dark p-4 mb-4 text-center">
+        <p class="text-muted mb-1">{{ sim.criado_em.strftime('%d/%m/%Y %H:%M') }}</p>
+        <p class="display-4 mb-1">{{ sim.score_percent|round(0)|int }}%</p>
+        <p class="mb-3">{{ sim.acertos }} acertos em {{ sim.total_questoes }} questões</p>
+        {% if estimativa_tri is not none %}
+        <p class="mb-3">Estimativa na escala 0 a 1000: <strong>{{ estimativa_tri|int }}</strong>. Não é a TRI oficial do INEP.</p>
+        {% endif %}
+        <div class="d-flex justify-content-center flex-wrap gap-2">
+            <a href="{{ url_for('dashboard') }}#simulados" class="btn btn-outline-light">Meus simulados</a>
+            <a href="{{ url_for('index') }}" class="btn btn-primary">Novo simulado</a>
+        </div>
+    </div>
+
+    {% set modo = "aluno" %}
+    {% include "_explicacao_notas.html" %}
+
+    <section class="card card-dark p-3 mb-4">
+        <h2 class="h5">Resumo por tema</h2>
+        <table class="table table-dark table-striped table-sm mb-0">
+            <thead>
+                <tr>
+                    {% set ordem = ordem_temas %}
+                    {% set pagina_param = none %}
+                    {% set ancora = none %}
+                    {% set rotulo, campo, inicio = "Tema", "tema", "asc" %}
+                    {% include "_th_ordem.html" %}
+                    {% set rotulo, campo, inicio = "Acertos", "acertos", "desc" %}
+                    {% include "_th_ordem.html" %}
+                    {% set rotulo, campo, inicio = "Total", "total", "desc" %}
+                    {% include "_th_ordem.html" %}
+                    {% set rotulo, campo, inicio = "%", "percentual", "desc" %}
+                    {% include "_th_ordem.html" %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in temas %}
+                    <tr>
+                        <td>{{ item.tema }}</td>
+                        <td>{{ item.acertos }}</td>
+                        <td>{{ item.total }}</td>
+                        <td>{{ item.percentual }}%</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section class="card card-dark questao-card p-3 mb-4">
+        <h2 class="h5">Gabarito comentado</h2>
+
+        {% if not respostas %}
+        <p class="mb-0">Este simulado guarda a nota, sem o gabarito de cada questão.</p>
+        {% else %}
+        <p class="text-muted small">As questões erradas e as marcadas para rever já vêm abertas.</p>
+        {% for r in respostas %}
+            <details class="gabarito-item" {% if not r.correta or r.question_id in marcadas %}open{% endif %}>
+                <summary class="d-flex flex-wrap justify-content-between gap-2">
+                    <span>
+                        Questão {{ pag_respostas.inicio + loop.index }} · {{ r.question.area|rotulo }}
+                        {% if r.question_id in marcadas %}
+                            <span class="badge bg-warning text-dark">Rever</span>
+                        {% endif %}
+                    </span>
+                    <span class="badge {{ 'bg-success' if r.correta else 'bg-danger' }}">
+                        {% if r.correta %}Acertou{% else %}Errou{% endif %}
+                    </span>
+                </summary>
+                <div class="mt-3">
+                    {% set questao = r.question %}
+                    {% include "_figura_questao.html" %}
+                    {% if not r.question.imagem or not r.question.imagem.startswith('img/questoes/') %}
+                    <p class="questao-texto enunciado-questao">{{ r.question.enunciado|limpar }}</p>
+                    {% endif %}
+                    {% include "_origem_questao.html" %}
+                    {% for letra, texto in [
+                        ('A', r.question.alternativa_a),
+                        ('B', r.question.alternativa_b),
+                        ('C', r.question.alternativa_c),
+                        ('D', r.question.alternativa_d),
+                        ('E', r.question.alternativa_e)
+                    ] %}
+                    {% set eh_correta = letra == r.question.resposta_correta %}
+                    {% set eh_marcada = letra == r.resposta_marcada %}
+                    <div class="alternativa-opcao {% if eh_correta %}correta{% elif eh_marcada %}errada{% endif %}">
+                        <span class="alternativa-letra">{{ letra }}</span>
+                        <span class="questao-texto">{% set texto = texto|limpar %}{% include "_texto_alternativa.html" %}</span>
+                    </div>
+                    {% endfor %}
+                    <p class="mb-1 mt-2"><strong>Sua resposta:</strong> {{ r.resposta_marcada }}</p>
+                    <p class="mb-1"><strong>Gabarito:</strong> {{ r.question.resposta_correta }}</p>
+                    {% if r.question.explicacao %}
+                        <p class="mb-2"><strong>Explicação:</strong> {{ r.question.explicacao }}</p>
+                    {% endif %}
+                    {% include "_link_gabarito.html" %}
+                </div>
+            </details>
+        {% endfor %}
+        {% set paginacao = pag_respostas %}
+        {% set ancora = none %}
+        {% set rotulo = "Gabarito" %}
+        {% include "_paginacao.html" %}
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

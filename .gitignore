@@ -1,0 +1,73 @@
+# Ambiente
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.Python
+
+# Segredos e ambiente local
+.env
+.env.*
+!.env.example
+*.key
+*.kdbx
+
+# Banco e uploads locais
+instance/
+*.db
+*.sqlite3
+
+# Material da disciplina, vídeos e rascunhos (não fazem parte da plataforma)
+Doc-Atividade-Extensionista/
+.tmp-faq*/
+.tmp-*/
+
+# PDFs oficiais do INEP (baixados localmente; o portal usa CSV/JSON e imagens)
+data/inep/*.pdf
+
+# Microdados do INEP (arquivos grandes)
+Microdados/
+
+# Importação e prints (uso local; o portal no ar não precisa)
+importar_acervo.py
+baixar_acervo_enem.py
+baixar_pdfs_inep.py
+gerar_prints_faq.py
+data/acervo/
+
+# Scripts e artefatos de geração de dados (não fazem parte da plataforma)
+popular_demo_dashboard.py
+microdados_simulados.py
+gerar_csv_enem.py
+gerar_relatorio.py
+import_enem.py
+import_questions.py
+models.py
+_limpar_*.py
+docs/
+data/_cols_*.txt
+data/exemplo.txt
+data/questoes_enem.txt
+data/enem_questoes_exemplo.csv
+data/enem_2024_caderno*.csv
+data/enem_2024_p1_*.csv
+data/inep/*.pdf.txt
+data/inep/amostra_*.txt
+
+# IDE / sistema
+.idea/
+.vscode/
+.cursor/
+*.swp
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Logs e temporários
+*.log
+*.tmp
+_check_*.py
+temp/
+.cache/

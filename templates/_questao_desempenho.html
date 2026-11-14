@@ -1,0 +1,41 @@
+<article class="gabarito-item">
+    <details {% if item.erros %}open{% endif %}>
+        <summary class="d-flex flex-wrap justify-content-between gap-2">
+            <strong>{{ item.rotulo }}{% if item.ano %} · {{ item.ano }}{% endif %}</strong>
+            <span class="badge {{ 'bg-danger' if item.erros else 'bg-success' }}">
+                {% if item.erros %}{{ item.erros }} erro{{ 's' if item.erros != 1 else '' }}{% else %}Acertou{% endif %}
+            </span>
+        </summary>
+        <div class="mt-3">
+            {% set questao = item.questao %}
+            {% include "_figura_questao.html" %}
+            {% if not item.questao.imagem or not item.questao.imagem.startswith('img/questoes/') %}
+            <p class="questao-texto enunciado-questao">{{ item.questao.enunciado|limpar }}</p>
+            {% endif %}
+            {% include "_origem_questao.html" %}
+            {% for letra, texto in [
+                ('A', item.questao.alternativa_a),
+                ('B', item.questao.alternativa_b),
+                ('C', item.questao.alternativa_c),
+                ('D', item.questao.alternativa_d),
+                ('E', item.questao.alternativa_e)
+            ] %}
+            {% set texto = texto|limpar %}
+            {% if texto %}
+            {% set eh_correta = letra == item.correta_letra %}
+            {% set eh_marcada = letra == item.marcada and not eh_correta %}
+            <div class="alternativa-opcao {% if eh_correta %}correta{% elif eh_marcada %}errada{% endif %}">
+                <span class="alternativa-letra">{{ letra }}</span>
+                <span class="questao-texto">{% include "_texto_alternativa.html" %}</span>
+            </div>
+            {% endif %}
+            {% endfor %}
+            <p class="mb-1 mt-2"><strong>Você marcou:</strong> {{ item.marcada }}</p>
+            <p class="mb-2"><strong>Gabarito:</strong> {{ item.correta_letra }}</p>
+            <div class="d-flex flex-wrap gap-2">
+                {% include "_link_gabarito.html" %}
+                <a class="btn btn-sm btn-outline-light" href="{{ url_for('revisar_questao', question_id=item.id) }}">Abrir questão</a>
+            </div>
+        </div>
+    </details>
+</article>

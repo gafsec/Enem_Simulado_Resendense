@@ -1,0 +1,7 @@
+{% if questao and tem_gabarito_oficial(questao) %}
+{% set pag_gb = pagina_gabarito(questao) %}
+{% set item_gb = "%02d"|format(questao.item) if questao.item else none %}
+<a class="btn btn-outline-light btn-sm" href="{{ url_for('ver_gabarito', question_id=questao.id) }}" target="_blank" rel="noopener">
+    {% if item_gb and pag_gb %}Ver a questão {{ item_gb }} no gabarito, página {{ pag_gb }}{% elif item_gb %}Ver a questão {{ item_gb }} no gabarito oficial{% else %}Ver no gabarito oficial{% endif %}
+</a>
+{% endif %}

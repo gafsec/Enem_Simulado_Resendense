@@ -1,0 +1,13 @@
+{% if questao and tem_arquivo_original(questao) %}
+{% set pag = pagina_original(questao) %}
+{% set item_caderno = "%02d"|format(questao.item) if questao.item else none %}
+{% set referencia = referencia_caderno(questao) %}
+<div class="mb-3">
+    {% if referencia %}
+    <p class="text-muted small mb-1">{{ referencia }}</p>
+    {% endif %}
+    <a class="btn btn-outline-light btn-sm" href="{{ url_for('arquivo_original', question_id=questao.id) }}" target="_blank" rel="noopener">
+        {% if item_caderno and pag %}Abrir a questão {{ item_caderno }} na página {{ pag }}{% elif item_caderno %}Ver o texto original da questão {{ item_caderno }}{% else %}Ver o texto original{% endif %}
+    </a>
+</div>
+{% endif %}

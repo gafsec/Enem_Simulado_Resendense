@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Projeto social Resendense - Enem{% endblock %}
+
+{% block content %}
+<div class="container pagina">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+        <h2 class="h4 mb-0">Desempenho</h2>
+        <a href="{{ url_for('index') }}" class="btn btn-sm btn-primary">Novo simulado</a>
+    </div>
+
+    <div class="row g-2 mb-3">
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('dashboard') }}#simulados" class="card card-dark indicador kpi">
+                <span>Simulados</span>
+                <h3>{{ total_simulados }}</h3>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="#areas" class="card card-dark indicador kpi">
+                <span>Aproveitamento</span>
+                <h3>{{ media_geral }}%</h3>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('dashboard_assunto', tipo='respondidas') }}" class="card card-dark indicador kpi">
+                <span>Respondidas</span>
+                <h3>{{ total_questoes }}</h3>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('dashboard_assunto', tipo='erros') }}" class="card card-dark indicador kpi">
+                <span>Para revisar</span>
+                <h3>{{ questoes_erradas }}</h3>
+            </a>
+        </div>
+    </div>
+
+    {% set modo = "aluno" %}
+    {% include "_explicacao_notas.html" %}
+
+    <div class="card card-dark p-3 mb-3" id="simulados">
+        <h3 class="h6 mb-2">Simulados</h3>
+        <div class="table-responsive">
+            <table class="table table-dark table-hover table-sm align-middle mb-0">
+                <thead>
+                    <tr>
+                        {% set ordem = ordem_historico %}
+                        {% set pagina_param = "pagina" %}
+                        {% set ancora = "simulados" %}
+                        {% set rotulo, campo, inicio = "Data", "quando", "desc" %}
+                        {% include "_th_ordem.html" %}
+                        {% set rotulo, campo, inicio = "Tipo", "tema", "asc" %}
+                        {% include "_th_ordem.html" %}
+                        {% set rotulo, campo, inicio = "IP", "ip", "asc" %}
+                        {% include "_th_ordem.html" %}
+                        {% set rotulo, campo, inicio = "%", "percentual", "desc" %}
+                        {% include "_th_ordem.html" %}
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in historico %}
+                    <tr>
+                        <td>{{ item.quando.strftime("%d/%m") if item.quando else "-" }}</td>
+                        <td>{{ item.tema }}</td>
+                        <td class="ip-oculto">{{ item.ip|ip_oculto }}</td>
+                        <td>{{ item.percentual|round(0)|int }}%</td>
+                        <td class="text-nowrap">
+                            {% if item.em_andamento %}
+                            <a class="btn btn-sm btn-primary" href="{{ url_for('quiz') }}">Continuar</a>
+                            {% elif item.tem_gabarito %}
+                            <a class="btn btn-sm btn-outline-light" href="{{ url_for('resultado', sim_id=item.id) }}">Revisar</a>
+                            {% else %}
+                            <a class="btn btn-sm btn-outline-light" href="{{ url_for('resultado', sim_id=item.id) }}">Ver nota</a>
+                            {% endif %}
+                            {% if item.pode_cancelar %}
+                            <form method="post" action="{{ url_for('cancelar_simulado') }}" class="d-inline">
+                                <input type="hidden" name="sim_id" value="{{ item.id }}">
+                                <input type="hidden" name="voltar" value="dashboard">
+                                <button type="submit" class="btn btn-sm btn-outline-danger"
+                                        onclick="return confirm('Cancelar este simulado? Ele sai da sua lista.');">
+                                    Cancelar
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-muted">Nenhum simulado ainda.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% set paginacao = pag_historico %}
+        {% set ancora = "simulados" %}
+        {% set rotulo = "Simulados" %}
+        {% include "_paginacao.html" %}
+        <p class="small text-muted mt-2 mb-0">{{ pag_historico.total }} simulado{{ 's' if pag_historico.total != 1 else '' }} na sua lista.</p>
+    </div>
+
+    {% if not desempenho.total %}
+    <div class="card card-dark p-3 mb-3">
+        <h3 class="h6">Ainda não há respostas suas</h3>
+        <p class="mb-3">Faça um simulado para ver as áreas e os assuntos.</p>
+        <a href="{{ url_for('index') }}" class="btn btn-primary">Começar simulado</a>
+    </div>
+    {% else %}
+
+    <div class="card card-dark p-3 mb-3" id="areas">
+        <h3 class="h6 mb-2">Áreas</h3>
+        {% for area in desempenho.areas %}
+        <div class="mb-3">
+            <a class="indicador d-block" href="{{ url_for('dashboard_assunto', tipo='area', chave=area.chave) }}">
+                <div class="d-flex justify-content-between gap-2">
+                    <strong>{{ area.rotulo }}</strong>
+                    <span>{{ area.percentual }}%</span>
+                </div>
+                <div class="progress my-1" style="height: 8px;">
+                    <div class="progress-bar {{ 'bg-danger' if area.percentual < 60 else 'bg-info' }}"
+                         style="width: {{ area.percentual }}%"></div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="card card-dark p-3 mb-3" id="assuntos">
+        <h3 class="h6 mb-2">Assuntos com mais erro</h3>
+        <div class="table-responsive">
+            <table class="table table-dark table-hover table-sm align-middle mb-0">
+                <thead>
+                    <tr>
+                        {% set ordem = ordem_assuntos %}
+                        {% set pagina_param = none %}
+                        {% set ancora = "assuntos" %}
+                        {% set rotulo, campo, inicio = "Assunto", "assunto", "asc" %}
+                        {% include "_th_ordem.html" %}
+                        {% set rotulo, campo, inicio = "Erros", "erros", "desc" %}
+                        {% include "_th_ordem.html" %}
+                        {% set rotulo, campo, inicio = "% de erro", "percentual", "desc" %}
+                        {% include "_th_ordem.html" %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for assunto in assuntos_erro %}
+                    <tr class="indicador-linha" data-href="{{ url_for('dashboard_assunto', tipo='assunto', chave=assunto.chave) }}">
+                        <td><a href="{{ url_for('dashboard_assunto', tipo='assunto', chave=assunto.chave) }}">{{ assunto.rotulo }}</a></td>
+                        <td>{{ assunto.erros }}</td>
+                        <td>{{ assunto.percentual_erro }}%</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3" class="text-muted">Nenhum erro registrado.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <p class="small text-muted mt-2 mb-0">A porcentagem é de erro naquele assunto, não o aproveitamento geral.</p>
+    </div>
+
+    <div class="card card-dark p-3 mb-3">
+        <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+            <h3 class="h6 mb-0">Questões para revisar</h3>
+            <a class="small" href="{{ url_for('dashboard_assunto', tipo='erros') }}">Ver todas</a>
+        </div>
+        {% for questao in desempenho.questoes[:5] %}
+        <article class="gabarito-item">
+            <div class="d-flex flex-wrap justify-content-between gap-2">
+                <a href="{{ url_for('revisar_questao', question_id=questao.id) }}"><strong>{{ questao.assunto }}</strong></a>
+                <span class="text-muted">{{ questao.erros }} erro{{ 's' if questao.erros != 1 else '' }}</span>
+            </div>
+            <p class="questao-texto mb-0">{{ questao.comando }}</p>
+        </article>
+        {% else %}
+        <p class="mb-0">Você ainda não errou nenhuma questão deste histórico.</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.querySelectorAll(".indicador-linha").forEach(function (linha) {
+        linha.addEventListener("click", function (evento) {
+            if (evento.target.closest("a")) return;
+            window.location.href = linha.dataset.href;
+        });
+    });
+</script>
+{% endblock %}

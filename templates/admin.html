@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+{% block title %}Admin - Projeto social Resendense - Enem{% endblock %}
+
+{% block content %}
+<div class="container pagina">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+        <h2 class="mb-0">Painel do admin</h2>
+        {% if ano_filtro or uf_filtro %}
+            <a href="{{ url_for('admin') }}" class="btn btn-outline-light btn-sm">Limpar filtro</a>
+        {% endif %}
+    </div>
+
+    <div class="row g-2 mb-3">
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('admin_indicador', tipo='questoes', ano=ano_filtro, uf=uf_filtro) }}" class="card card-dark indicador kpi">
+                <span>Questões</span>
+                <h3>{{ total_questoes }}</h3>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('admin_indicador', tipo='usuarios', ano=ano_filtro, uf=uf_filtro) }}" class="card card-dark indicador kpi">
+                <span>Usuários</span>
+                <h3>{{ total_usuarios }}</h3>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('admin_indicador', tipo='simulados', ano=ano_filtro, uf=uf_filtro) }}" class="card card-dark indicador kpi">
+                <span>Simulados</span>
+                <h3>{{ total_simulados }}</h3>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('admin_indicador', tipo='redacoes', ano=ano_filtro, uf=uf_filtro) }}" class="card card-dark indicador kpi">
+                <span>Redações</span>
+                <h3>{{ total_redacoes }}</h3>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('admin_indicador', tipo='acertos', ano=ano_filtro, uf=uf_filtro) }}" class="card card-dark indicador kpi">
+                <span>Média de acertos</span>
+                <h3>{{ media_acertos if media_acertos is not none else "-" }}{% if media_acertos is not none %}%{% endif %}</h3>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('admin_indicador', tipo='tri', ano=ano_filtro, uf=uf_filtro) }}" class="card card-dark indicador kpi">
+                <span>Média TRI</span>
+                <h3>{{ media_tri if media_tri is not none else "-" }}</h3>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('admin_indicador', tipo='maior', ano=ano_filtro, uf=uf_filtro) }}" class="card card-dark indicador kpi">
+                <span>Maior acerto</span>
+                <h3>{{ maior if maior is not none else "-" }}{% if maior is not none %}%{% endif %}</h3>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('admin_indicador', tipo='menor', ano=ano_filtro, uf=uf_filtro) }}" class="card card-dark indicador kpi">
+                <span>Menor acerto</span>
+                <h3>{{ menor if menor is not none else "-" }}{% if menor is not none %}%{% endif %}</h3>
+            </a>
+        </div>
+        {% for bloco in medias_area %}
+        <div class="col-6 col-md-3">
+            <a href="{{ url_for('admin_indicador', tipo=bloco.sigla|lower, ano=ano_filtro, uf=uf_filtro) }}" class="card card-dark indicador kpi">
+                <span>TRI {{ bloco.nome }}</span>
+                <h3>{{ bloco.media if bloco.media is not none else "-" }}</h3>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% set modo = "admin" %}
+    {% include "_explicacao_notas.html" %}
+
+    <div class="card card-dark p-3 mb-3">
+        <h5 class="h6 mb-2">
+            <a class="indicador" href="{{ url_for('admin_indicador', tipo='semana', ano=ano_filtro, uf=uf_filtro) }}">Simulados por semana</a>
+        </h5>
+        <p class="small text-muted mb-2">
+            Quantidade de provas feitas pela turma em cada semana.
+            Mostra em quais períodos o uso foi maior, como na reta final antes do Dia 1.
+        </p>
+        <canvas id="chartSemana" height="90"></canvas>
+    </div>
+
+    <div class="row g-2 mb-3">
+        <div class="col-md-6">
+            <div class="card card-dark p-3 h-100">
+                <h5 class="h6 mb-2">Nota média por área</h5>
+                <canvas id="chartAreas" height="120"></canvas>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card card-dark p-3 h-100">
+                <h5 class="h6 mb-2">
+                    <a class="indicador" href="{{ url_for('admin_indicador', tipo='uf', ano=ano_filtro, uf=uf_filtro) }}">Simulados por UF</a>
+                </h5>
+                <p class="small text-muted mb-2">Conta todas as provas da amostra, inclusive as de treino.</p>
+                <canvas id="chartUfs" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-dark p-3 mb-3" id="simulados">
+        <h5 class="h6 mb-2">Ranking por TRI média</h5>
+        <p class="small text-muted mb-2">
+            A coluna % é o acerto objetivo da prova oficial: acertos dividido pelo total de itens, vezes 100.
+            Isso não é a TRI. A TRI olha quais itens a pessoa acertou, não só quantos.
+        </p>
+        <div class="table-responsive">
+            <table class="table table-dark table-hover table-sm align-middle mb-0">
+                <thead>
+                    <tr>
+                        {% set ordem = ordem_simulados %}
+                        {% set pagina_param = "p_sim" %}
+                        {% set ancora = "simulados" %}
+                        {% set rotulo, campo, inicio = "Pos.", "posicao", "asc" %}
+                        {% include "_th_ordem.html" %}
+                        {% set rotulo, campo, inicio = "Participante", "nome", "asc" %}
+                        {% include "_th_ordem.html" %}
+                        {% set rotulo, campo, inicio = "IP", "ip", "asc" %}
+                        {% include "_th_ordem.html" %}
+                        {% set rotulo, campo, inicio = "Edição", "ano", "desc" %}
+                        {% include "_th_ordem.html" %}
+                        {% set rotulo, campo, inicio = "UF", "uf", "asc" %}
+                        {% include "_th_ordem.html" %}
+                        {% set rotulo, campo, inicio = "Município", "municipio", "asc" %}
+                        {% include "_th_ordem.html" %}
+                        {% set rotulo, campo, inicio = "Acertos", "acertos", "desc" %}
+                        {% include "_th_ordem.html" %}
+                        {% set rotulo, campo, inicio = "% acertos", "percentual", "desc" %}
+                        {% include "_th_ordem.html" %}
+                        {% set rotulo, campo, inicio = "Natureza", "cn", "desc" %}
+                        {% include "_th_ordem.html" %}
+                        {% set rotulo, campo, inicio = "Humanas", "ch", "desc" %}
+                        {% include "_th_ordem.html" %}
+                        {% set rotulo, campo, inicio = "Linguagens", "lc", "desc" %}
+                        {% include "_th_ordem.html" %}
+                        {% set rotulo, campo, inicio = "Matemática", "mt", "desc" %}
+                        {% include "_th_ordem.html" %}
+                        {% set rotulo, campo, inicio = "TRI média", "tri", "desc" %}
+                        {% include "_th_ordem.html" %}
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in simulados %}
+                    <tr>
+                        <td class="ranking-pos">{% if item.posicao %}{{ item.posicao }}º{% else %}-{% endif %}</td>
+                        <td>{{ item.nome|nome_oculto }}</td>
+                        <td class="ip-oculto">{{ item.ip|ip_oculto }}</td>
+                        <td>{{ item.ano or "-" }}</td>
+                        <td>
+                            {% if item.uf %}
+                            <a href="{{ url_for('admin', uf=item.uf, ano=ano_filtro) }}">{{ item.uf }}</a>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>{{ item.municipio or "-" }}</td>
+                        <td>{{ item.acertos }}/{{ item.total }}</td>
+                        <td>{{ item.percentual|round(1) }}%</td>
+                        <td>{{ item.notas.get("CN", "-") }}</td>
+                        <td>{{ item.notas.get("CH", "-") }}</td>
+                        <td>{{ item.notas.get("LC", "-") }}</td>
+                        <td>{{ item.notas.get("MT", "-") }}</td>
+                        <td>{{ item.media_tri if item.media_tri is not none else "-" }}</td>
+                        <td>
+                            <a class="btn btn-sm btn-outline-light"
+                               href="{{ url_for('admin_simulado', sim_id=item.id, ano=ano_filtro, uf=uf_filtro) }}">Abrir</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="14" class="text-muted">Nenhum simulado neste filtro.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% set paginacao = pag_simulados %}
+        {% set ancora = "simulados" %}
+        {% set rotulo = "Ranking" %}
+        {% include "_paginacao.html" %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    function coresTema() {
+        const estilo = getComputedStyle(document.documentElement);
+        return {
+            texto: (estilo.getPropertyValue("--texto") || "#e5e7eb").trim(),
+            borda: (estilo.getPropertyValue("--borda-suave") || "rgba(148, 163, 184, 0.25)").trim(),
+            forte: (estilo.getPropertyValue("--texto-forte") || "#f8fafc").trim()
+        };
+    }
+    function aplicarCoresGrafico() {
+        const cores = coresTema();
+        Chart.defaults.color = cores.texto;
+        Chart.defaults.borderColor = cores.borda;
+    }
+    aplicarCoresGrafico();
+    const barra = {
+        backgroundColor: "rgba(56, 189, 248, 0.55)",
+        borderColor: "#38bdf8",
+        borderWidth: 2
+    };
+
+    function textoBarra(valor, casas) {
+        if (valor === null || valor === undefined || valor === "") return "";
+        const numero = Number(valor);
+        if (Number.isNaN(numero)) return String(valor);
+        if (casas === 0) return String(Math.round(numero));
+        return numero.toFixed(casas);
+    }
+
+    const valorNasBarras = {
+        id: "valorNasBarras",
+        afterDatasetsDraw(chart, _args, pluginOptions) {
+            const ctx = chart.ctx;
+            const casas = pluginOptions.casas ?? 0;
+            ctx.save();
+            ctx.fillStyle = coresTema().forte;
+            ctx.font = "600 12px system-ui, sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "bottom";
+            chart.getDatasetMeta(0).data.forEach((item, indice) => {
+                const valor = chart.data.datasets[0].data[indice];
+                if (valor === null || valor === undefined) return;
+                ctx.fillText(textoBarra(valor, casas), item.x, item.y - 4);
+            });
+            ctx.restore();
+        }
+    };
+
+    function opcoesBarra(extra) {
+        extra = extra || {};
+        return {
+            plugins: {
+                legend: { display: false },
+                valorNasBarras: { casas: extra.casas ?? 0 }
+            },
+            layout: { padding: { top: 22 } },
+            scales: {
+                y: Object.assign({ beginAtZero: true }, extra.y || {})
+            }
+        };
+    }
+
+
+    {% if semana_labels %}
+    new Chart(document.getElementById("chartSemana"), {
+        type: "bar",
+        data: {
+            labels: {{ semana_labels|tojson }},
+            datasets: [{
+                label: "Simulados",
+                data: {{ semana_valores|tojson }},
+                ...barra
+            }]
+        },
+        options: opcoesBarra({ y: { ticks: { precision: 0 } } }),
+        plugins: [valorNasBarras]
+    });
+    {% endif %}
+
+    new Chart(document.getElementById("chartAreas"), {
+        type: "bar",
+        data: {
+            labels: {{ medias_area|map(attribute='nome')|list|tojson }},
+            datasets: [{
+                label: "TRI média",
+                data: {{ medias_area|map(attribute='media')|list|tojson }},
+                ...barra
+            }]
+        },
+        options: opcoesBarra({ casas: 1, y: { max: 1000 } }),
+        plugins: [valorNasBarras]
+    });
+
+    new Chart(document.getElementById("chartUfs"), {
+        type: "bar",
+        data: {
+            labels: {{ (ufs_labels or [])|tojson }},
+            datasets: [{ label: "Simulados", data: {{ (ufs_valores or [])|tojson }}, ...barra }]
+        },
+        options: opcoesBarra({ y: { ticks: { precision: 0 } } }),
+        plugins: [valorNasBarras]
+    });
+
+    document.addEventListener("tema-alterado", function () {
+        aplicarCoresGrafico();
+        document.querySelectorAll("canvas").forEach(function (tela) {
+            const grafico = typeof Chart.getChart === "function" ? Chart.getChart(tela) : null;
+            if (grafico) {
+                grafico.update();
+            }
+        });
+    });
+</script>
+{% endblock %}

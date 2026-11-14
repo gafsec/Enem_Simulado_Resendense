@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Avaliação - Projeto social Resendense - Enem{% endblock %}
+
+{% block content %}
+<div class="container pagina">
+    <h2 class="h5 mb-3">Avaliação do portal</h2>
+    <div class="card card-dark p-3">
+        <p class="mb-2">
+            Clique no botão abaixo para abrir o <strong>Google Forms</strong>.
+            É a mesma pesquisa que a turma preencheu sobre o projeto.
+        </p>
+        <p class="small text-muted mb-3">
+            Lá você diz o que achou do portal, quantas vezes usou, o quanto ajudou e o que pode melhorar.
+            As respostas mostram o resultado na comunidade escolar.
+        </p>
+        {% if form_avaliacao_url %}
+        <a class="btn btn-primary" href="{{ form_avaliacao_url }}" target="_blank" rel="noopener">
+            Abrir pesquisa no Google Forms
+        </a>
+        <p class="small mt-3 mb-0">
+            O link cai neste formulário:
+            <a href="{{ form_avaliacao_url }}" target="_blank" rel="noopener">Google Forms — avaliação do projeto</a>
+        </p>
+        {% else %}
+        <p class="text-warning mb-0">O link do formulário ainda não foi configurado.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

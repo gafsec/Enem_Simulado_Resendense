@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}{{ titulo }} - Desempenho{% endblock %}
+
+{% block content %}
+<div class="container pagina">
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        <a href="{{ url_for('dashboard') }}#areas" class="btn btn-outline-light btn-sm">Voltar ao desempenho</a>
+        {% if voltar_area %}
+        <a href="{{ url_for('dashboard_assunto', tipo='area', chave=voltar_area) }}" class="btn btn-outline-light btn-sm">{{ voltar_rotulo }}</a>
+        {% endif %}
+    </div>
+
+    <h1 class="h3 mb-3">{{ titulo }}</h1>
+
+    <div class="row mb-4">
+        {% if tipo == 'erros' %}
+        <div class="col-6 col-md-4 mb-3">
+            <div class="card card-dark text-center p-3 h-100">
+                <span>Questões</span>
+                <h3>{{ quantidade }}</h3>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 mb-3">
+            <div class="card card-dark text-center p-3 h-100">
+                <span>Erros</span>
+                <h3>{{ resumo.erros }}</h3>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-6 col-md-3 mb-3">
+            <div class="card card-dark text-center p-3 h-100">
+                <span>Aproveitamento</span>
+                <h3>{{ resumo.percentual }}%</h3>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-3">
+            <div class="card card-dark text-center p-3 h-100">
+                <span>Acertos</span>
+                <h3>{{ resumo.acertos }}/{{ resumo.total }}</h3>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-3">
+            <div class="card card-dark text-center p-3 h-100">
+                <span>Erros</span>
+                <h3>{{ resumo.erros }}</h3>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if assuntos %}
+    <div class="card card-dark p-3 mb-4">
+        <h2 class="h5">Assuntos desta área</h2>
+        <p class="small text-muted">Abra um assunto.</p>
+        <div class="table-responsive">
+            <table class="table table-dark table-hover table-sm align-middle mb-0">
+                <thead>
+                    <tr>
+                        {% set ordem = ordem_assuntos %}
+                        {% set pagina_param = "p_ass" %}
+                        {% set ancora = none %}
+                        {% set rotulo, campo, inicio = "Assunto", "assunto", "asc" %}
+                        {% include "_th_ordem.html" %}
+                        {% set rotulo, campo, inicio = "Erros", "erros", "desc" %}
+                        {% include "_th_ordem.html" %}
+                        {% set rotulo, campo, inicio = "Acertos", "acertos", "desc" %}
+                        {% include "_th_ordem.html" %}
+                        {% set rotulo, campo, inicio = "%", "percentual", "desc" %}
+                        {% include "_th_ordem.html" %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for assunto in assuntos %}
+                    <tr class="indicador-linha" data-href="{{ url_for('dashboard_assunto', tipo='assunto', chave=assunto.chave) }}">
+                        <td><a href="{{ url_for('dashboard_assunto', tipo='assunto', chave=assunto.chave) }}">{{ assunto.rotulo }}</a></td>
+                        <td>{{ assunto.erros }}</td>
+                        <td>{{ assunto.acertos }}</td>
+                        <td>{{ assunto.percentual }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% set paginacao = pag_assuntos %}
+        {% set ancora = none %}
+        {% set rotulo = "Assuntos" %}
+        {% include "_paginacao.html" %}
+    </div>
+    {% endif %}
+
+    {% if area_treino %}
+    <form method="post" action="{{ url_for('start_simulation') }}" class="mb-4">
+        <input type="hidden" name="modo" value="por_tema">
+        <input type="hidden" name="tema" value="{{ area_treino }}">
+        {% if ano_treino %}
+        <input type="hidden" name="ano" value="{{ ano_treino }}">
+        {% endif %}
+        <input type="hidden" name="qtd" value="10">
+        <input type="hidden" name="correcao" value="imediata">
+        <button class="btn btn-primary" type="submit">Treinar este assunto</button>
+    </form>
+    {% endif %}
+
+    <section class="card card-dark p-3 mb-4">
+        <h2 class="h5">Questões</h2>
+        {% if questoes %}
+            {% for item in questoes %}
+            {% if item.grupo and (loop.first or questoes[loop.index0 - 1].grupo != item.grupo) %}
+            <div class="d-flex flex-wrap justify-content-between gap-2 mt-3">
+                <h3 class="h6 mb-0">
+                    <a href="{{ url_for('dashboard_assunto', tipo='assunto', chave=item.grupo_chave) }}">{{ item.grupo }}</a>
+                </h3>
+                <span class="text-muted">{{ item.grupo_percentual }}% · {{ item.grupo_erros }} erro{{ 's' if item.grupo_erros != 1 else '' }}</span>
+            </div>
+            {% endif %}
+            {% include "_questao_desempenho.html" %}
+            {% endfor %}
+            {% set paginacao = pag_questoes %}
+            {% set ancora = none %}
+            {% set rotulo = "Questões" %}
+            {% include "_paginacao.html" %}
+        {% else %}
+            <p class="mb-0">Nenhuma questão neste recorte.</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.querySelectorAll(".indicador-linha").forEach(function (linha) {
+        linha.addEventListener("click", function (evento) {
+            if (evento.target.closest("a")) return;
+            window.location.href = linha.dataset.href;
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% if paginacao and paginacao.paginas > 1 %}
+<nav class="paginacao" aria-label="{{ rotulo or 'Páginas' }}">
+    {% if paginacao.tem_anterior %}
+    <a class="btn btn-sm btn-outline-light" href="{{ link_pagina(paginacao.param, paginacao.pagina - 1, ancora) }}">Anterior</a>
+    {% else %}
+    <span class="btn btn-sm btn-outline-light disabled">Anterior</span>
+    {% endif %}
+    <span class="paginacao-info">Página {{ paginacao.pagina }} de {{ paginacao.paginas }}</span>
+    {% if paginacao.tem_proxima %}
+    <a class="btn btn-sm btn-outline-light" href="{{ link_pagina(paginacao.param, paginacao.pagina + 1, ancora) }}">Próxima</a>
+    {% else %}
+    <span class="btn btn-sm btn-outline-light disabled">Próxima</span>
+    {% endif %}
+</nav>
+{% endif %}
