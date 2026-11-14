@@ -993,13 +993,61 @@ def get_or_create_demo_user() -> User:
     return user
 
 
+_CAMPOS_QUESTAO = (
+    "ano",
+    "item",
+    "area",
+    "tema",
+    "enunciado",
+    "alternativa_a",
+    "alternativa_b",
+    "alternativa_c",
+    "alternativa_d",
+    "alternativa_e",
+    "resposta_correta",
+    "explicacao",
+    "imagem",
+    "idioma",
+    "aplicacao",
+    "caderno",
+    "fonte",
+)
+
+
+def _carregar_questoes_json(caminho: Path) -> None:
+    itens = json.loads(caminho.read_text(encoding="utf-8"))
+    novas = 0
+    for bruto in itens:
+        gabarito = str(bruto.get("resposta_correta") or "").strip().upper()[:1]
+        enunciado = (bruto.get("enunciado") or "").strip()
+        if not enunciado or gabarito not in "ABCDE":
+            continue
+        dados = {campo: bruto.get(campo) for campo in _CAMPOS_QUESTAO}
+        dados["enunciado"] = enunciado
+        dados["resposta_correta"] = gabarito
+        for letra in "abcde":
+            chave = f"alternativa_{letra}"
+            dados[chave] = dados.get(chave) or ""
+        db.session.add(Question(**dados))
+        novas += 1
+        if novas % 400 == 0:
+            db.session.commit()
+    db.session.commit()
+
+
 def seed_questions():
-    """Carrega o caderno ENEM se o banco ainda não tiver questões."""
-    if Question.query.count() > 0:
+    """Carrega o acervo ENEM se o banco ainda não tiver essas questões."""
+    if Question.query.filter(Question.fonte.isnot(None)).count() > 0:
         return
 
-    path = Path(__file__).resolve().parent / "data" / "enem_2024_importar.csv"
-    if not path.exists():
+    raiz = Path(__file__).resolve().parent
+    json_path = raiz / "data" / "questoes.json"
+    if json_path.is_file():
+        _carregar_questoes_json(json_path)
+        return
+
+    path = raiz / "data" / "enem_2024_importar.csv"
+    if Question.query.count() > 0 or not path.exists():
         return
 
     with path.open("r", encoding="utf-8-sig", newline="") as arquivo:
@@ -2145,6 +2193,7 @@ def register_routes(app: Flask):
                 "total": len(ids),
                 "revisar": len(_ids_marcados(sim_aberto)),
             }
+        total_acervo = base.count()
         return render_template(
             "index.html",
             user=user,
@@ -2152,7 +2201,9 @@ def register_routes(app: Flask):
             areas_prova=[{"chave": chave, "rotulo": rotulo} for chave, rotulo, _trecho in AREAS_PROVA],
             assuntos=_catalogo_filtros(),
             anos=anos,
-            total_acervo=base.count(),
+            total_acervo=total_acervo,
+            ano_inicial=anos[-1] if anos else None,
+            ano_final=anos[0] if anos else None,
             em_andamento=em_andamento,
         )
 

@@ -30,7 +30,7 @@ data/inep/*.pdf
 # Microdados do INEP (arquivos grandes)
 Microdados/
 
-# Importação e prints (uso local; o portal no ar não precisa)
+# Importação e prints (uso local; o portal no ar usa data/questoes.json)
 importar_acervo.py
 baixar_acervo_enem.py
 baixar_pdfs_inep.py
